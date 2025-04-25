@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Catatan Keuangan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+    <h1 class="text-3xl font-bold mb-2">Saldo Saat Ini</h1>
+    <div id="balance" class="text-4xl font-extrabold text-green-600 mb-4">
+      Rp0
+    </div>
+
+    <div class="flex gap-2 mb-4">
+      <button
+        id="addBtn"
+        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+      >
+        + Tambah
+      </button>
+      <button
+        id="subBtn"
+        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+      >
+        - Kurang
+      </button>
+    </div>
+
+    <div
+      id="formSection"
+      class="hidden flex flex-col gap-2 mb-6 w-full max-w-sm"
+    >
+      <input
+        id="amountInput"
+        type="number"
+        placeholder="Jumlah (contoh: 20000)"
+        class="px-4 py-2 rounded border w-full"
+      />
+      <input
+        id="descInput"
+        type="text"
+        placeholder="Keterangan (contoh: Bensin)"
+        class="px-4 py-2 rounded border w-full"
+      />
+      <button
+        id="submitBtn"
+        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        Simpan
+      </button>
+    </div>
+
+    <div class="w-full max-w-md overflow-x-auto">
+      <table class="w-full table-auto bg-white shadow rounded overflow-hidden">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="px-4 py-2 text-left">No</th>
+            <th class="px-4 py-2 text-left">Keterangan</th>
+            <th class="px-4 py-2 text-left">Jumlah</th>
+            <th class="px-4 py-2 text-left">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="transactionList"></tbody>
+      </table>
+    </div>
+
+    <script>
+      let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+      let balance = Number(localStorage.getItem("balance")) || 0;
+      let mode = "add";
+
+      const balanceDisplay = document.getElementById("balance");
+      const formSection = document.getElementById("formSection");
+      const amountInput = document.getElementById("amountInput");
+      const descInput = document.getElementById("descInput");
+      const transactionList = document.getElementById("transactionList");
+
+      function updateDisplay() {
+        balanceDisplay.textContent = `Rp${balance.toLocaleString("id-ID")}`;
+        transactionList.innerHTML = transactions
+          .map(
+            (t, i) => `
+        <tr>
+          <td class="px-4 py-2">${i + 1}</td>
+          <td class="px-4 py-2">${t.desc}</td>
+          <td class="px-4 py-2 ${
+            t.amount < 0 ? "text-red-500" : "text-green-500"
+          }">${t.amount < 0 ? "-" : "+"}Rp${Math.abs(t.amount).toLocaleString(
+              "id-ID"
+            )}</td>
+          <td class="px-4 py-2">
+            <button onclick="deleteTransaction(${i})" class="bg-gray-300 hover:bg-gray-400 text-sm text-black px-2 py-1 rounded">Hapus</button>
+          </td>
+        </tr>
+      `
+          )
+          .join("");
+      }
+
+      function deleteTransaction(index) {
+        balance -= transactions[index].amount;
+        transactions.splice(index, 1);
+        localStorage.setItem("balance", balance);
+        localStorage.setItem("transactions", JSON.stringify(transactions));
+        updateDisplay();
+      }
+
+      document.getElementById("addBtn").onclick = () => {
+        mode = "add";
+        formSection.classList.remove("hidden");
+      };
+
+      document.getElementById("subBtn").onclick = () => {
+        mode = "sub";
+        formSection.classList.remove("hidden");
+      };
+
+      document.getElementById("submitBtn").onclick = () => {
+        const amount = parseInt(amountInput.value);
+        const desc = descInput.value.trim();
+        if (!amount || !desc) return alert("Isi jumlah dan keterangan ya!");
+
+        const finalAmount = mode === "add" ? amount : -amount;
+        balance += finalAmount;
+        transactions.unshift({ amount: finalAmount, desc });
+
+        localStorage.setItem("balance", balance);
+        localStorage.setItem("transactions", JSON.stringify(transactions));
+
+        amountInput.value = "";
+        descInput.value = "";
+        formSection.classList.add("hidden");
+
+        updateDisplay();
+      };
+
+      updateDisplay();
+    </script>
+  </body>
+</html>
